@@ -8,6 +8,7 @@ function builder() {
         offset: 0,
         withTies: false
     }
+    let groupByValue = ''
 
     const handleArrayCondition = (condition) => {
         const column = condition[0]
@@ -74,6 +75,15 @@ function builder() {
             })
             return this
         },
+        groupBy(...args) {
+            const lastIndex = args.length - 1
+            args.forEach((arg, i) => {
+                if (Array.isArray(arg)) return groupByValue += arg.reduce((res, val) => res += `, ${val}`)
+                if (i === lastIndex && isGroupByMod(arg)) return groupByValue += ` ${arg.toUpperCase()}`
+                groupByValue += groupByValue ? `, ${arg}` : arg
+            })
+            return this
+        },
         orderBy(...conditions) {
             conditions.forEach((condition) => {
                 const {column, direction, collate, withFill, from, to, step} = condition
@@ -106,6 +116,7 @@ function builder() {
             const whereResult = whereValues.length ? whereValues.reduce((res, val) => res += ` AND ${val}`) : ''
             result += whereResult ? ` WHERE ${whereResult}` : ''
             const orderByResult = orderByValues.length ? orderByValues.reduce((res, val) => res += `, ${val}`) : ''
+            result += groupByValue ? ` GROUP BY ${groupByValue}` : ''
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
             const limitResult = buildLimit()
             result += limitResult ? ` ${limitResult}` : ''
@@ -143,6 +154,11 @@ function getOperatorForValue(operatorOrValue) {
 function isUnaryOperator(operator) {
     const operators = ['IS NULL', 'IS NOT NULL']
     return operators.indexOf(operator.toUpperCase()) !== -1
+}
+
+function isGroupByMod(value) {
+    const mods = ['WITH ROLLUP', 'WITH TOTALS', 'WITH CUBE']
+    return mods.indexOf(value.toUpperCase()) !== -1
 }
 
 module.exports = {
