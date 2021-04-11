@@ -3,6 +3,11 @@ function builder() {
     let fromValue = ''
     const whereValues = []
     const orderByValues = []
+    const limitValues = {
+        limit: null,
+        offset: 0,
+        withTies: false
+    }
 
     const handleArrayCondition = (condition) => {
         const column = condition[0]
@@ -44,6 +49,13 @@ function builder() {
             whereValues.push(`${column} = ${protectValue(condition[column])}`)
         }
     }
+    const buildLimit = () => {
+        if (!limitValues.limit && !limitValues.offset) return ''
+        if (!limitValues.limit && limitValues.offset) return `LIMIT ${limitValues.offset}`
+        let result = `LIMIT ${limitValues.offset}, ${limitValues.limit}`
+        result += limitValues.withTies ? ' WITH TIES' : ''
+        return result
+    }
 
     return {
         select(...columns) {
@@ -76,12 +88,27 @@ function builder() {
             })
             return this
         },
+        limit(value, withTies = false) {
+            if (typeof value === 'number') limitValues.limit = value
+            if (Array.isArray(value)) {
+                limitValues.limit = value[1]
+                limitValues.offset = value[0]
+            }
+            limitValues.withTies = withTies
+            return this
+        },
+        offset(value) {
+            limitValues.offset = value
+            return this
+        },
         toRawSQL() {
             let result = `SELECT ${selectValue} FROM ${fromValue}`
             const whereResult = whereValues.length ? whereValues.reduce((res, val) => res += ` AND ${val}`) : ''
             result += whereResult ? ` WHERE ${whereResult}` : ''
             const orderByResult = orderByValues.length ? orderByValues.reduce((res, val) => res += `, ${val}`) : ''
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
+            const limitResult = buildLimit()
+            result += limitResult ? ` ${limitResult}` : ''
 
             return result
         },
