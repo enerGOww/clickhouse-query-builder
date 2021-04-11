@@ -31,4 +31,9 @@ describe('query select tests', () => {
             .toBe('SELECT id, name AS fullname FROM test')
     })
 
+    it('select distinct', () => {
+        expect(builder().selectDistinct('name').from('test').toRawSQL())
+            .toBe('SELECT DISTINCT name FROM test')
+    })
+
 })
