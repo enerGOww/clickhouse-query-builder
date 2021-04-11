@@ -63,6 +63,10 @@ function builder() {
             selectValue = columns.reduce((res, val) => res += `, ${val}`)
             return this
         },
+        selectDistinct(column) {
+            selectValue = `DISTINCT ${column}`
+            return this
+        },
         from(tableName) {
             fromValue = tableName
             return this
