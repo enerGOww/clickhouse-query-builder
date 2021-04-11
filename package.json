@@ -1,0 +1,23 @@
+{
+  "name": "clickhouse-query-builder",
+  "version": "0.0.1",
+  "description": "simple query builder fo clickhouse",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "clickhouse",
+    "query",
+    "builder"
+  ],
+  "author": "enerGOww",
+  "license": "ISC",
+  "devDependencies": {
+    "clickhouse": "^2.2.4",
+    "jest": "^26.6.3"
+  },
+  "peerDependenciesMeta": {
+    "clickhouse": "^2.*"
+  }
+}
