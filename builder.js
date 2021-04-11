@@ -2,6 +2,7 @@ function builder() {
     let selectValue = '*'
     let fromValue = ''
     const whereValues = []
+    const havingValues = []
     const orderByValues = []
     const limitValues = {
         limit: null,
@@ -10,20 +11,20 @@ function builder() {
     }
     let groupByValue = ''
 
-    const handleArrayCondition = (condition) => {
+    const handleArrayCondition = (condition, array) => {
         const column = condition[0]
         let operator
         let value
         if (condition.length === 2) {
             operator = getOperatorForValue(condition[1])
-            if (isUnaryOperator(operator)) return whereValues.push(`${column} ${operator}`)
+            if (isUnaryOperator(operator)) return array.push(`${column} ${operator}`)
             value = Array.isArray(condition[1])
                 ? getStringArray(condition[1])
                 : protectValue(condition[1])
         }
         if (condition.length === 3) {
             if (typeof condition[1] === 'number' && typeof condition[2] === 'number')
-                return whereValues.push(`${column} BETWEEN ${condition[1]} AND ${condition[2]}`)
+                return array.push(`${column} BETWEEN ${condition[1]} AND ${condition[2]}`)
             operator = condition[1]
             value = Array.isArray(condition[2])
                 ? getStringArray(condition[2])
@@ -33,21 +34,21 @@ function builder() {
             operator = condition[1]
             value = `${condition[2]} AND ${condition[3]}`
         }
-        return whereValues.push(`${column} ${operator} ${value}`)
+        return array.push(`${column} ${operator} ${value}`)
     }
-    const handleObjectCondition = (condition) => {
+    const handleObjectCondition = (condition, array) => {
         for (const column in condition) {
             const operator = getOperatorForValue(condition[column])
             if (isUnaryOperator(operator)) {
-                whereValues.push(`${column} ${condition[column]}`)
+                array.push(`${column} ${condition[column]}`)
                 continue
             }
             if (Array.isArray(condition[column])) {
                 const value = getStringArray(condition[column])
-                whereValues.push(`${column} ${operator} ${value}`)
+                array.push(`${column} ${operator} ${value}`)
                 continue
             }
-            whereValues.push(`${column} = ${protectValue(condition[column])}`)
+            array.push(`${column} = ${protectValue(condition[column])}`)
         }
     }
     const buildLimit = () => {
@@ -71,11 +72,19 @@ function builder() {
             fromValue = tableName
             return this
         },
-        where(...whereConditions) {
-            whereConditions.forEach((whereCondition) => {
-                if (typeof whereCondition === 'string') return whereValues.push(whereCondition)
-                if (Array.isArray(whereCondition)) return handleArrayCondition(whereCondition)
-                if (typeof whereCondition === 'object') return handleObjectCondition(whereCondition)
+        where(...conditions) {
+            conditions.forEach((condition) => {
+                if (typeof condition === 'string') return whereValues.push(condition)
+                if (Array.isArray(condition)) return handleArrayCondition(condition, whereValues)
+                if (typeof condition === 'object') return handleObjectCondition(condition, whereValues)
+            })
+            return this
+        },
+        having(...conditions) {
+            conditions.forEach((condition) => {
+                if (typeof condition === 'string') return havingValues.push(condition)
+                if (Array.isArray(condition)) return handleArrayCondition(condition, havingValues)
+                if (typeof condition === 'object') return handleObjectCondition(condition, havingValues)
             })
             return this
         },
@@ -121,6 +130,8 @@ function builder() {
             result += whereResult ? ` WHERE ${whereResult}` : ''
             const orderByResult = orderByValues.length ? orderByValues.reduce((res, val) => res += `, ${val}`) : ''
             result += groupByValue ? ` GROUP BY ${groupByValue}` : ''
+            const havingResult = havingValues.length ? havingValues.reduce((res, val) => res += ` AND ${val}`) : ''
+            result += havingResult ? ` HAVING ${havingResult}` : ''
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
             const limitResult = buildLimit()
             result += limitResult ? ` ${limitResult}` : ''
