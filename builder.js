@@ -1,6 +1,7 @@
 function builder() {
     let selectValue = '*'
     let fromValue = ''
+    const prewhereValues = []
     const whereValues = []
     const havingValues = []
     const orderByValues = []
@@ -72,6 +73,14 @@ function builder() {
             fromValue = tableName
             return this
         },
+        prewhere(...conditions) {
+            conditions.forEach((condition) => {
+                if (typeof condition === 'string') return prewhereValues.push(condition)
+                if (Array.isArray(condition)) return handleArrayCondition(condition, prewhereValues)
+                if (typeof condition === 'object') return handleObjectCondition(condition, prewhereValues)
+            })
+            return this
+        },
         where(...conditions) {
             conditions.forEach((condition) => {
                 if (typeof condition === 'string') return whereValues.push(condition)
@@ -126,11 +135,13 @@ function builder() {
         },
         toRawSQL() {
             let result = `SELECT ${selectValue} FROM ${fromValue}`
-            const whereResult = whereValues.length ? whereValues.reduce((res, val) => res += ` AND ${val}`) : ''
+            const prewhereResult = prewhereValues.length ? prewhereValues.reduce((r, v) => r += ` AND ${v}`) : ''
+            result += prewhereResult ? ` PREWHERE ${prewhereResult}` : ''
+            const whereResult = whereValues.length ? whereValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += whereResult ? ` WHERE ${whereResult}` : ''
-            const orderByResult = orderByValues.length ? orderByValues.reduce((res, val) => res += `, ${val}`) : ''
+            const orderByResult = orderByValues.length ? orderByValues.reduce((r, v) => r += `, ${v}`) : ''
             result += groupByValue ? ` GROUP BY ${groupByValue}` : ''
-            const havingResult = havingValues.length ? havingValues.reduce((res, val) => res += ` AND ${val}`) : ''
+            const havingResult = havingValues.length ? havingValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += havingResult ? ` HAVING ${havingResult}` : ''
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
             const limitResult = buildLimit()
@@ -151,7 +162,7 @@ function builder() {
 }
 
 function getStringArray(array) {
-    const arrayBody = array.reduce((res, val) => res += `${protectValue(val)}, `, '').slice(0, -2)
+    const arrayBody = array.reduce((r, v) => r += `${protectValue(v)}, `, '').slice(0, -2)
     return `[${arrayBody}]`
 }
 function protectValue(value) {
