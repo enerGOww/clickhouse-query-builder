@@ -11,6 +11,7 @@ function builder() {
         withTies: false
     }
     let groupByValue = ''
+    let formatValue = ''
 
     const handleArrayCondition = (condition, array) => {
         const column = condition[0]
@@ -106,6 +107,10 @@ function builder() {
             })
             return this
         },
+        format(format) {
+            formatValue = format
+            return this
+        },
         orderBy(...conditions) {
             conditions.forEach((condition) => {
                 const {column, direction, collate, withFill, from, to, step} = condition
@@ -135,17 +140,25 @@ function builder() {
         },
         toRawSQL() {
             let result = `SELECT ${selectValue} FROM ${fromValue}`
+
             const prewhereResult = prewhereValues.length ? prewhereValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += prewhereResult ? ` PREWHERE ${prewhereResult}` : ''
+
             const whereResult = whereValues.length ? whereValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += whereResult ? ` WHERE ${whereResult}` : ''
+
             const orderByResult = orderByValues.length ? orderByValues.reduce((r, v) => r += `, ${v}`) : ''
             result += groupByValue ? ` GROUP BY ${groupByValue}` : ''
+
             const havingResult = havingValues.length ? havingValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += havingResult ? ` HAVING ${havingResult}` : ''
+
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
+
             const limitResult = buildLimit()
             result += limitResult ? ` ${limitResult}` : ''
+
+            result += formatValue ? ` FORMAT ${formatValue}` : ''
 
             return result
         },
