@@ -5,6 +5,11 @@ function builder() {
     const whereValues = []
     const havingValues = []
     const orderByValues = []
+    const limitByValues = {
+        limit: null,
+        offset: 0,
+        expression: ''
+    }
     const limitValues = {
         limit: null,
         offset: 0,
@@ -53,6 +58,13 @@ function builder() {
             array.push(`${column} = ${protectValue(condition[column])}`)
         }
     }
+    const buildLimitBy = () => {
+        if (!limitByValues.expression) return ''
+        let result = `LIMIT ${limitByValues.offset}, ${limitByValues.limit}`
+        result += ` BY ${limitByValues.expression}`
+        return result
+    }
+
     const buildLimit = () => {
         if (!limitValues.limit && !limitValues.offset) return ''
         if (!limitValues.limit && limitValues.offset) return `LIMIT ${limitValues.offset}`
@@ -63,7 +75,7 @@ function builder() {
 
     return {
         select(...columns) {
-            selectValue = columns.reduce((res, val) => res += `, ${val}`)
+            selectValue = columns.reduce((r, v) => r += `, ${v}`)
             return this
         },
         selectDistinct(column) {
@@ -125,6 +137,20 @@ function builder() {
             })
             return this
         },
+        limitBy(value, expressions) {
+            if (typeof value === 'number') limitByValues.limit = value
+            if (Array.isArray(value)) {
+                limitByValues.limit = value[1]
+                limitByValues.offset = value[0]
+            }
+            if (Array.isArray(expressions)) limitByValues.expression = expressions.reduce((r, v) => r += `, ${v}`)
+            else limitByValues.expression = expressions
+            return this
+        },
+        offsetBy(value) {
+            limitByValues.offset = value
+            return this
+        },
         limit(value, withTies = false) {
             if (typeof value === 'number') limitValues.limit = value
             if (Array.isArray(value)) {
@@ -154,6 +180,9 @@ function builder() {
             result += havingResult ? ` HAVING ${havingResult}` : ''
 
             result += orderByResult ? ` ORDER BY ${orderByResult}` : ''
+
+            const limitByResult = buildLimitBy()
+            result += limitByResult ? ` ${limitByResult}` : ''
 
             const limitResult = buildLimit()
             result += limitResult ? ` ${limitResult}` : ''
