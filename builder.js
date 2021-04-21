@@ -1,6 +1,7 @@
 function builder() {
     let selectValue = '*'
     let fromValue = ''
+    let sampleValue = ''
     const prewhereValues = []
     const whereValues = []
     const havingValues = []
@@ -78,12 +79,17 @@ function builder() {
             selectValue = columns.reduce((r, v) => r += `, ${v}`)
             return this
         },
-        selectDistinct(column) {
-            selectValue = `DISTINCT ${column}`
+        selectDistinct(...columns) {
+            selectValue = `DISTINCT ${columns.reduce((r, v) => r += `, ${v}`)}`
             return this
         },
         from(tableName) {
             fromValue = tableName
+            return this
+        },
+        sample(sample, offset) {
+            sampleValue = sample
+            sampleValue += offset ? ` OFFSET ${offset}` : ''
             return this
         },
         prewhere(...conditions) {
@@ -166,6 +172,8 @@ function builder() {
         },
         toRawSQL() {
             let result = `SELECT ${selectValue} FROM ${fromValue}`
+
+            result += sampleValue ? ` SAMPLE ${sampleValue}` : ''
 
             const prewhereResult = prewhereValues.length ? prewhereValues.reduce((r, v) => r += ` AND ${v}`) : ''
             result += prewhereResult ? ` PREWHERE ${prewhereResult}` : ''

@@ -36,4 +36,19 @@ describe('query select tests', () => {
             .toBe('SELECT DISTINCT name FROM test')
     })
 
+    it('select distinct multiple column', () => {
+        expect(builder().selectDistinct('name', 'age').from('test').toRawSQL())
+            .toBe('SELECT DISTINCT name, age FROM test')
+    })
+
+    it('sample', () => {
+        expect(builder().from('test').sample('1/10').toRawSQL())
+            .toBe('SELECT * FROM test SAMPLE 1/10')
+    })
+
+    it('sample offset', () => {
+        expect(builder().from('test').sample(0.1, '1/2').toRawSQL())
+            .toBe('SELECT * FROM test SAMPLE 0.1 OFFSET 1/2')
+    })
+
 })
