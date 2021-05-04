@@ -1,4 +1,4 @@
-function builder() {
+function builder(client = {}) {
     let selectValue = '*'
     let fromValue = ''
     let sampleValue = ''
@@ -199,13 +199,13 @@ function builder() {
 
             return result
         },
-        toPromise(client) {
+        toPromise() {
             return client.query(this.toRawSQL()).toPromise()
         },
-        exec(client, callback) {
+        exec(callback) {
             return client.query(this.toRawSQL()).exec(callback)
         },
-        stream(client) {
+        stream() {
             return client.query(this.toRawSQL()).stream()
         }
     }
