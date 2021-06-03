@@ -46,6 +46,7 @@ function builder(client = {}) {
     }
     const handleObjectCondition = (condition, array) => {
         for (const column in condition) {
+            if (condition[column] === undefined) continue
             const operator = getOperatorForValue(condition[column])
             if (isUnaryOperator(operator)) {
                 array.push(`${column} ${condition[column]}`)

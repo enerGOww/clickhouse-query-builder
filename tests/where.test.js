@@ -43,6 +43,11 @@ describe('query where test', () => {
             .toBe(baseResult + 'name IS NULL AND age IS NOT NULL')
     })
 
+    it('where is object type гтвуаштвув', () => {
+        expect(queryBody.where({name: 'IS NULL', age: undefined}).toRawSQL())
+            .toBe(baseResult + 'name IS NULL')
+    })
+
     it('where array type', () => {
         expect(queryBody.where(['name', 'like', 'l']).toRawSQL())
             .toBe(baseResult + "name like 'l'")
